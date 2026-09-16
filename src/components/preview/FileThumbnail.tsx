@@ -1,17 +1,17 @@
-import type {GeneratedFilePreview} from '../../lib/types';
+import type {FilePiece} from './FileGallery';
 
 export interface FileThumbnailProps {
-  readonly file: GeneratedFilePreview;
+  readonly piece: FilePiece;
 }
 
-export function FileThumbnail({file}: FileThumbnailProps): JSX.Element {
-  if (file.format === 'svg') {
+export function FileThumbnail({piece}: FileThumbnailProps): JSX.Element {
+  if (piece.svg) {
     return (
       <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded border border-slate-200 bg-white p-1.5 dark:border-slate-700 dark:bg-slate-950">
-        {/* Safe: file.content is a standalone SVG document produced by our own generator, not user-supplied HTML. */}
+        {/* Safe: content is a standalone SVG document produced by our own generator, not user-supplied HTML. */}
         <div
           className="h-full w-full [&>svg]:h-full [&>svg]:w-full"
-          dangerouslySetInnerHTML={{__html: file.content}}
+          dangerouslySetInnerHTML={{__html: piece.svg.content}}
         />
       </div>
     );
