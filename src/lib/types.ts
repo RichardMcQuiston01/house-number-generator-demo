@@ -38,8 +38,14 @@ export interface ResolvedFont {
 /** Which cut/engrave file format(s) to produce. Mirrors the package's `OutputFormat`. */
 export type OutputFormat = 'svg' | 'dxf' | 'both';
 
-/** Which physical piece a generated file represents. */
-export type GeneratedFileKind = 'number' | 'name' | 'backer';
+/**
+ * Whether number/name cut files are split one-per-glyph (matching the
+ * package's own output) or combined into one file per group.
+ */
+export type FileGrouping = 'individual' | 'grouped';
+
+/** Which physical piece a generated file represents. `'combined'` is the optional multi-layer SVG. */
+export type GeneratedFileKind = 'number' | 'name' | 'backer' | 'combined';
 
 /** A single generated cut/engrave file, tagged for the gallery UI. */
 export interface GeneratedFilePreview extends GeneratedFile {
@@ -85,6 +91,8 @@ export interface SignFormState {
   readonly assemblyType: AssemblyConfig['type'];
   readonly screwSize: ScrewSize;
   readonly format: OutputFormat;
+  readonly fileGrouping: FileGrouping;
+  readonly includeMultiLayerSvg: boolean;
 }
 
 export const DEFAULT_FORM_STATE: SignFormState = {
@@ -101,6 +109,8 @@ export const DEFAULT_FORM_STATE: SignFormState = {
   assemblyType: 'hardware',
   screwSize: 'M3',
   format: 'both',
+  fileGrouping: 'individual',
+  includeMultiLayerSvg: false,
 };
 
 export const SCREW_SIZES: readonly ScrewSize[] = [

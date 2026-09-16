@@ -16,7 +16,12 @@ export interface FilePiece {
   readonly dxf?: GeneratedFilePreview;
 }
 
-const KIND_ORDER: readonly GeneratedFileKind[] = ['number', 'name', 'backer'];
+const KIND_ORDER: readonly GeneratedFileKind[] = [
+  'number',
+  'name',
+  'backer',
+  'combined',
+];
 
 function baseFileName(name: string): string {
   return name.replace(/\.(svg|dxf)$/, '');

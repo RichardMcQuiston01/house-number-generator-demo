@@ -49,11 +49,11 @@ export function useSignGenerator(
           : undefined;
 
       const config = buildSignConfig(form);
-      const outcome = generateSignFiles(
-        config,
-        {numberFont, nameFont},
-        form.format,
-      );
+      const outcome = generateSignFiles(config, {numberFont, nameFont}, {
+        format: form.format,
+        fileGrouping: form.fileGrouping,
+        includeMultiLayerSvg: form.includeMultiLayerSvg,
+      });
       setResult(outcome);
     } catch (error) {
       setResult({

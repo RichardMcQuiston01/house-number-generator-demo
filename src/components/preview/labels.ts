@@ -4,6 +4,7 @@ export const KIND_LABELS: Record<GeneratedFileKind, string> = {
   number: 'House number',
   name: 'Name',
   backer: 'Backer plate',
+  combined: 'Multi-layer SVG',
 };
 
 export const STAGE_BADGE_LABELS: Record<SignGenerationError['stage'], string> =

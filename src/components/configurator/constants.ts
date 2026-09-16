@@ -1,6 +1,7 @@
 import {FONT_CATALOG} from '../../lib/fonts';
 import type {
   AssemblyConfig,
+  FileGrouping,
   OutputFormat,
   ScrewSize,
   SignShape,
@@ -47,4 +48,9 @@ export const FORMAT_OPTIONS: readonly SelectOption<OutputFormat>[] = [
   {value: 'svg', label: 'SVG (cutting)'},
   {value: 'dxf', label: 'DXF (cutting)'},
   {value: 'both', label: 'Both SVG and DXF'},
+];
+
+export const FILE_GROUPING_OPTIONS: readonly SelectOption<FileGrouping>[] = [
+  {value: 'individual', label: 'Individual (one file per glyph)'},
+  {value: 'grouped', label: 'Grouped (one file per number/name group)'},
 ];

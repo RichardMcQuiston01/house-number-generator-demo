@@ -2,6 +2,7 @@ import type {FormEvent} from 'react';
 import type {UseSignGeneratorApi} from '../../lib/useSignGenerator';
 import {
   ASSEMBLY_OPTIONS,
+  FILE_GROUPING_OPTIONS,
   FONT_OPTIONS,
   FORMAT_OPTIONS,
   SCREW_SIZE_OPTIONS,
@@ -9,6 +10,7 @@ import {
   STYLE_OPTIONS,
   UNIT_OPTIONS,
 } from './constants';
+import {CheckboxField} from './CheckboxField';
 import {GenerationErrors} from './GenerationErrors';
 import {NumberField} from './NumberField';
 import {RadioGroup} from './RadioGroup';
@@ -178,6 +180,22 @@ export function ConfiguratorForm(props: ConfiguratorFormProps): JSX.Element {
             onChange={format => api.updateForm({format})}
           />
         </div>
+        <RadioGroup
+          name="configurator-file-grouping"
+          legend="Cut file grouping"
+          value={form.fileGrouping}
+          options={FILE_GROUPING_OPTIONS}
+          onChange={fileGrouping => api.updateForm({fileGrouping})}
+        />
+        <CheckboxField
+          id="configurator-multi-layer-svg"
+          label="Include a multi-layer combined SVG"
+          checked={form.includeMultiLayerSvg}
+          onChange={includeMultiLayerSvg =>
+            api.updateForm({includeMultiLayerSvg})
+          }
+          hint="One SVG with the backer, numbers, and name each on their own colored layer."
+        />
       </section>
 
       <GenerationErrors outcome={api.result} />
