@@ -90,9 +90,7 @@ export interface SignFormState {
   readonly unit: Unit;
   readonly assemblyType: AssemblyConfig['type'];
   readonly screwSize: ScrewSize;
-  readonly format: OutputFormat;
   readonly fileGrouping: FileGrouping;
-  readonly includeMultiLayerSvg: boolean;
 }
 
 export const DEFAULT_FORM_STATE: SignFormState = {
@@ -108,9 +106,7 @@ export const DEFAULT_FORM_STATE: SignFormState = {
   unit: 'in',
   assemblyType: 'hardware',
   screwSize: 'M3',
-  format: 'both',
   fileGrouping: 'individual',
-  includeMultiLayerSvg: false,
 };
 
 export const SCREW_SIZES: readonly ScrewSize[] = [
