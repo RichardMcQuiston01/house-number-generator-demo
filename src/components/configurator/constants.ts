@@ -1,0 +1,45 @@
+import type {
+  AssemblyConfig,
+  OutputFormat,
+  ScrewSize,
+  SignShape,
+  SignStyle,
+  Unit,
+} from '../../lib/types';
+import {SCREW_SIZES} from '../../lib/types';
+
+export interface SelectOption<T extends string> {
+  readonly value: T;
+  readonly label: string;
+}
+
+export const STYLE_OPTIONS: readonly SelectOption<SignStyle>[] = [
+  {value: 'numbersOnly', label: 'Numbers only'},
+  {value: 'nameAndNumbers', label: 'Name + numbers'},
+];
+
+export const SHAPE_OPTIONS: readonly SelectOption<SignShape>[] = [
+  {value: 'square', label: 'Square'},
+  {value: 'rectangle', label: 'Rectangle'},
+  {value: 'round', label: 'Round'},
+];
+
+export const UNIT_OPTIONS: readonly SelectOption<Unit>[] = [
+  {value: 'in', label: 'Inches (in)'},
+  {value: 'mm', label: 'Millimeters (mm)'},
+];
+
+export const ASSEMBLY_OPTIONS: readonly SelectOption<AssemblyConfig['type']>[] =
+  [
+    {value: 'hardware', label: 'Hardware (screws)'},
+    {value: 'adhesive', label: 'Adhesive'},
+  ];
+
+export const SCREW_SIZE_OPTIONS: readonly SelectOption<ScrewSize>[] =
+  SCREW_SIZES.map(size => ({value: size, label: size}));
+
+export const FORMAT_OPTIONS: readonly SelectOption<OutputFormat>[] = [
+  {value: 'svg', label: 'SVG (cutting)'},
+  {value: 'dxf', label: 'DXF (cutting)'},
+  {value: 'both', label: 'Both SVG and DXF'},
+];
