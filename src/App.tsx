@@ -1,16 +1,26 @@
-/**
- * Top-level shell. Feature areas (header/footer, configurator form, preview
- * gallery) are wired in here as they land on `dev`.
- */
-export default function App() {
+import {ConfiguratorForm} from './components/configurator';
+import {Footer} from './components/layout/Footer';
+import {Header} from './components/layout/Header';
+import {Hero} from './components/layout/Hero';
+import {PreviewPanel} from './components/preview/PreviewPanel';
+import {useSignGenerator} from './lib/useSignGenerator';
+
+export default function App(): JSX.Element {
+  const api = useSignGenerator();
+
   return (
     <div className="flex min-h-screen flex-col">
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-12">
-        <h1 className="text-3xl font-bold">House Number Generator Demo</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
-          Scaffold in progress.
-        </p>
+      <Header />
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4">
+        <Hero />
+        <div className="grid gap-10 pb-16 lg:grid-cols-2">
+          <ConfiguratorForm api={api} />
+          <div className="lg:sticky lg:top-6 lg:self-start">
+            <PreviewPanel api={api} />
+          </div>
+        </div>
       </main>
+      <Footer />
     </div>
   );
 }
