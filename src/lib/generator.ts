@@ -6,7 +6,10 @@ import {
   validateSignConfig,
 } from '@richardmcquiston01/house-number-generator';
 import type {LoadedFont} from '@richardmcquiston01/house-number-generator';
+import {buildGroupedDxfFile, buildGroupedSvgFile} from './groupedFiles';
+import {buildMultiLayerSvg} from './multiLayerSvg';
 import type {
+  FileGrouping,
   GeneratedFileKind,
   GeneratedFilePreview,
   OutputFormat,
@@ -50,6 +53,14 @@ function classifyFileName(
   return {kind, format};
 }
 
+export interface GenerateSignFilesOptions {
+  readonly format: OutputFormat;
+  /** 'individual' (one file per glyph, matching the package's own output) or 'grouped' (one file per number/name group). */
+  readonly fileGrouping: FileGrouping;
+  /** Also produce a single SVG with the backer, numbers, and name each on their own colored layer. */
+  readonly includeMultiLayerSvg: boolean;
+}
+
 /**
  * Runs the full sign generation pipeline (validate → register fonts →
  * compute layout → produce cut files), tagging every generated file with the
@@ -62,7 +73,7 @@ export function generateSignFiles(
     readonly numberFont: ResolvedFont;
     readonly nameFont?: ResolvedFont;
   },
-  format: OutputFormat,
+  options: GenerateSignFilesOptions,
 ): SignGenerationOutcome {
   const validation = validateSignConfig(config);
   if (!validation.ok) {
@@ -138,16 +149,73 @@ export function generateSignFiles(
   }
   const layout = layoutResult.value;
 
+  const {format, fileGrouping, includeMultiLayerSvg} = options;
+  const wantsSvg = format === 'svg' || format === 'both';
+  const wantsDxf = format === 'dxf' || format === 'both';
+
   const files: GeneratedFilePreview[] = [];
-  if (format === 'svg' || format === 'both') {
-    for (const file of generateSvgFiles(layout, config.unit)) {
-      files.push({...file, ...classifyFileName(file.name)});
+
+  if (fileGrouping === 'individual') {
+    if (wantsSvg) {
+      for (const file of generateSvgFiles(layout, config.unit)) {
+        files.push({...file, ...classifyFileName(file.name)});
+      }
+    }
+    if (wantsDxf) {
+      for (const file of generateDxfFiles(layout, config.unit)) {
+        files.push({...file, ...classifyFileName(file.name)});
+      }
+    }
+  } else {
+    if (wantsSvg) {
+      const numbers = buildGroupedSvgFile(
+        'numbers.svg',
+        layout.numberGlyphs,
+        layout.numberHoles,
+        config.unit,
+      );
+      if (numbers) files.push({...numbers, kind: 'number', format: 'svg'});
+      if (layout.nameGlyphs) {
+        const name = buildGroupedSvgFile(
+          'name.svg',
+          layout.nameGlyphs,
+          layout.nameHoles,
+          config.unit,
+        );
+        if (name) files.push({...name, kind: 'name', format: 'svg'});
+      }
+      const backer = generateSvgFiles(layout, config.unit).find(
+        file => file.name === 'backer.svg',
+      );
+      if (backer) files.push({...backer, kind: 'backer', format: 'svg'});
+    }
+    if (wantsDxf) {
+      const numbers = buildGroupedDxfFile(
+        'numbers.dxf',
+        layout.numberGlyphs,
+        layout.numberHoles,
+        config.unit,
+      );
+      if (numbers) files.push({...numbers, kind: 'number', format: 'dxf'});
+      if (layout.nameGlyphs) {
+        const name = buildGroupedDxfFile(
+          'name.dxf',
+          layout.nameGlyphs,
+          layout.nameHoles,
+          config.unit,
+        );
+        if (name) files.push({...name, kind: 'name', format: 'dxf'});
+      }
+      const backer = generateDxfFiles(layout, config.unit).find(
+        file => file.name === 'backer.dxf',
+      );
+      if (backer) files.push({...backer, kind: 'backer', format: 'dxf'});
     }
   }
-  if (format === 'dxf' || format === 'both') {
-    for (const file of generateDxfFiles(layout, config.unit)) {
-      files.push({...file, ...classifyFileName(file.name)});
-    }
+
+  if (includeMultiLayerSvg) {
+    const combined = buildMultiLayerSvg(layout, config);
+    files.push({...combined, kind: 'combined', format: 'svg'});
   }
 
   return {ok: true, value: {config, layout, files}};

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Cut file grouping choice: **Individual** (one SVG/DXF per glyph, the
+  original behavior) or **Grouped** (one combined SVG/DXF for all number
+  glyphs, and one for all name glyphs) — `src/lib/groupedFiles.ts`. The
+  backer plate is always its own file either way.
+- Optional multi-layer combined SVG (`src/lib/multiLayerSvg.ts`): one SVG
+  with the backer, numbers, and name each on their own Inkscape-compatible
+  layer (`inkscape:groupmode="layer"`) with a distinct stroke color
+  (backer black, numbers red, name blue), for laser workflows that assign
+  an operation per layer/color rather than per file.
+- File gallery gained a "Cut file grouping" toggle and a "Multi-layer SVG"
+  section for the new combined-layers file.
+
 ### Changed
 
 - Font selection is now a dropdown of bundled fonts (`src/lib/fonts.ts`,
