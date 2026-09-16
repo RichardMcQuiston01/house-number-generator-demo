@@ -1,0 +1,114 @@
+/**
+ * Shared type contract for the demo app. Every feature area (form, preview,
+ * generator lib) imports from here so they can be built in parallel against
+ * a stable interface.
+ */
+import type {
+  AssemblyConfig,
+  GeneratedFile,
+  ScrewSize,
+  SignConfig,
+  SignLayout,
+  SignShape,
+  SignStyle,
+  Unit,
+  ValidationError,
+} from '@richardmcquiston01/house-number-generator';
+
+export type {
+  AssemblyConfig,
+  GeneratedFile,
+  ScrewSize,
+  SignConfig,
+  SignLayout,
+  SignShape,
+  SignStyle,
+  Unit,
+  ValidationError,
+};
+
+/** Which of the two font slots a font upload fills. */
+export type FontSlotId = 'numberFont' | 'nameFont';
+
+/** A font file the user uploaded for one slot, kept in memory for regeneration. */
+export interface UploadedFontFile {
+  readonly slot: FontSlotId;
+  readonly fileName: string;
+  readonly familyName: string;
+  readonly buffer: ArrayBuffer;
+}
+
+/** Which cut/engrave file format(s) to produce. Mirrors the package's `OutputFormat`. */
+export type OutputFormat = 'svg' | 'dxf' | 'both';
+
+/** Which physical piece a generated file represents. */
+export type GeneratedFileKind = 'number' | 'name' | 'backer';
+
+/** A single generated cut/engrave file, tagged for the gallery UI. */
+export interface GeneratedFilePreview extends GeneratedFile {
+  readonly kind: GeneratedFileKind;
+  readonly format: 'svg' | 'dxf';
+}
+
+/** Full result of a successful generation: layout for the composite preview, plus every downloadable file. */
+export interface SignGenerationResult {
+  readonly config: SignConfig;
+  readonly layout: SignLayout;
+  readonly files: readonly GeneratedFilePreview[];
+}
+
+/** Which pipeline stage produced an error, with a single user-facing message per field (or general). */
+export interface SignGenerationError {
+  readonly stage: 'validation' | 'font' | 'layout';
+  readonly fieldErrors: readonly ValidationError[];
+  readonly message: string;
+}
+
+export type SignGenerationOutcome =
+  | {readonly ok: true; readonly value: SignGenerationResult}
+  | {readonly ok: false; readonly error: SignGenerationError};
+
+/**
+ * Form state for the configurator. Numeric/font fields are kept as UI-friendly
+ * primitives; `toSignConfig()` in `src/lib/generator.ts` converts this into a
+ * validated `SignConfig` (font ids fixed as `'numberFont'` / `'nameFont'` in
+ * the registry, matching {@link FontSlotId}).
+ */
+export interface SignFormState {
+  readonly style: SignStyle;
+  readonly houseNumber: string;
+  readonly name: string;
+  readonly shape: SignShape;
+  readonly numberHeight: number;
+  readonly nameHeight: number | undefined;
+  readonly margin: number;
+  readonly unit: Unit;
+  readonly assemblyType: AssemblyConfig['type'];
+  readonly screwSize: ScrewSize;
+  readonly format: OutputFormat;
+}
+
+export const DEFAULT_FORM_STATE: SignFormState = {
+  style: 'numbersOnly',
+  houseNumber: '742',
+  name: '',
+  shape: 'rectangle',
+  numberHeight: 4,
+  nameHeight: undefined,
+  margin: 0.5,
+  unit: 'in',
+  assemblyType: 'hardware',
+  screwSize: 'M3',
+  format: 'both',
+};
+
+export const SCREW_SIZES: readonly ScrewSize[] = [
+  'M3',
+  'M4',
+  'M5',
+  '#4-40',
+  '#6-32',
+  '#8-32',
+  '#10-24',
+  '1/4-20',
+];
