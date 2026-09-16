@@ -22,7 +22,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The file gallery is now tabbed by piece category (House number / Name /
   Backer plate / Multi-layer SVG) instead of one long stacked list.
 
+### Fixed
+
+- **Mounting holes frequently landed outside the glyph they belonged to.**
+  The package centers each hole on the glyph's bounding-box center, which
+  for asymmetric or open shapes (e.g. "4", "0", "1", "7") often falls in
+  empty space or inside a counter rather than on material.
+  `src/lib/holePlacement.ts` recomputes every hole's position as the point
+  of maximum clearance from the glyph's own outline (its "pole of
+  inaccessibility"), correctly excluding counters (the holes of "0", "8",
+  etc.) from consideration, so holes land on solid material whenever the
+  glyph is thick enough to contain them. Applied once, right after layout
+  computation, so every output (individual files, grouped files,
+  multi-layer SVG, and the assembled preview) gets the fix. Backer
+  engraving marks are moved to match.
+
 ### Changed
+
+- Hardware assembly now always uses one universal screw hole size (M4's
+  hole, ~4.5mm/0.18in, which comfortably fits both common metric and SAE
+  small hardware) instead of asking which of eight screw sizes to use —
+  the "Screw size" selector was removed.
 
 - Both SVG and DXF cut files are always generated (the "Output format"
   selector was removed) and the multi-layer combined SVG is always

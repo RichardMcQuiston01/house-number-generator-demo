@@ -4,7 +4,6 @@ import {
   ASSEMBLY_OPTIONS,
   FILE_GROUPING_OPTIONS,
   FONT_OPTIONS,
-  SCREW_SIZE_OPTIONS,
   SHAPE_OPTIONS,
   STYLE_OPTIONS,
   UNIT_OPTIONS,
@@ -171,17 +170,6 @@ export function ConfiguratorForm(props: ConfiguratorFormProps): JSX.Element {
           options={ASSEMBLY_OPTIONS}
           onChange={assemblyType => api.updateForm({assemblyType})}
         />
-        {form.assemblyType === 'hardware' && (
-          <div className="max-w-xs">
-            <SelectField
-              id="configurator-screw-size"
-              label="Screw size"
-              value={form.screwSize}
-              options={SCREW_SIZE_OPTIONS}
-              onChange={screwSize => api.updateForm({screwSize})}
-            />
-          </div>
-        )}
       </section>
 
       <section className="space-y-4">

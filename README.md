@@ -41,7 +41,7 @@ npm run format:check # check formatting without writing
 1. Open the app and choose a sign style: **Numbers only**, or **Name + numbers**.
 2. Enter the house number (and name, if applicable).
 3. Pick a font for the number text (and name text, if applicable) from the bundled font dropdown (see `public/fonts/THIRD-PARTY-LICENSES.md` for attribution).
-4. Choose the sign shape, dimensions, margin, unit, and assembly type (hardware with a screw size, or adhesive).
+4. Choose the sign shape, dimensions, margin, unit, and assembly type (hardware, using one universal screw hole size, or adhesive).
 5. Choose the cut file grouping: one file per glyph, or one combined file per number/name group.
 6. Click **Generate Sign** to see an assembled preview and download the cut files (SVG, DXF, and a multi-layer combined SVG are always generated), organized into tabs by piece category, individually or all together as a ZIP.
 
