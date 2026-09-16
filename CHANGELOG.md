@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Font selection is now a dropdown of bundled fonts (`src/lib/fonts.ts`,
+  served from `public/fonts/`) instead of uploading a `.ttf`/`.otf` file —
+  no font file required to try the demo. See
+  `public/fonts/THIRD-PARTY-LICENSES.md` for attribution (DejaVu, Bitstream
+  Vera License; Liberation, SIL OFL 1.1).
+- The Buy Me a Coffee donation block moved from the page footer to a
+  dismissible floating card fixed to the bottom-right corner
+  (`src/components/layout/DonateCard.tsx`); the dismissal persists via
+  `localStorage`.
+
 ## [0.1.0] - 2026-09-16
 
 ### Added

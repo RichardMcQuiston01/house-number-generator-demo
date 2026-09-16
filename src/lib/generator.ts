@@ -3,19 +3,17 @@ import {
   createFontRegistry,
   generateDxfFiles,
   generateSvgFiles,
-  loadFont,
   validateSignConfig,
 } from '@richardmcquiston01/house-number-generator';
 import type {LoadedFont} from '@richardmcquiston01/house-number-generator';
 import type {
-  FontSlotId,
   GeneratedFileKind,
   GeneratedFilePreview,
   OutputFormat,
+  ResolvedFont,
   SignConfig,
   SignFormState,
   SignGenerationOutcome,
-  UploadedFontFile,
 } from './types';
 
 /** Converts UI form state into the package's `SignConfig`, fixing font ids to the registry slots used by {@link generateSignFiles}. */
@@ -52,33 +50,6 @@ function classifyFileName(
   return {kind, format};
 }
 
-/** Parses an uploaded font file, extracting its family name for display. Does not register it for generation. */
-export async function loadUploadedFont(
-  slot: FontSlotId,
-  file: File,
-): Promise<
-  | {readonly ok: true; readonly value: UploadedFontFile}
-  | {readonly ok: false; readonly message: string}
-> {
-  const buffer = await file.arrayBuffer();
-  const result = loadFont(buffer);
-  if (!result.ok) {
-    return {
-      ok: false,
-      message: `"${file.name}" could not be read as a font: ${result.error.message}`,
-    };
-  }
-  return {
-    ok: true,
-    value: {
-      slot,
-      fileName: file.name,
-      familyName: result.value.familyName,
-      buffer,
-    },
-  };
-}
-
 /**
  * Runs the full sign generation pipeline (validate → register fonts →
  * compute layout → produce cut files), tagging every generated file with the
@@ -87,9 +58,9 @@ export async function loadUploadedFont(
  */
 export function generateSignFiles(
   config: SignConfig,
-  uploadedFonts: {
-    readonly numberFont: UploadedFontFile;
-    readonly nameFont?: UploadedFontFile;
+  selectedFonts: {
+    readonly numberFont: ResolvedFont;
+    readonly nameFont?: ResolvedFont;
   },
   format: OutputFormat,
 ): SignGenerationOutcome {
@@ -108,7 +79,7 @@ export function generateSignFiles(
   const fonts = createFontRegistry();
   const numberFontResult = fonts.register(
     'numberFont',
-    uploadedFonts.numberFont.buffer,
+    selectedFonts.numberFont.buffer,
   );
   if (!numberFontResult.ok) {
     return {
@@ -123,19 +94,19 @@ export function generateSignFiles(
 
   let nameFont: LoadedFont | undefined;
   if (config.style === 'nameAndNumbers') {
-    if (!uploadedFonts.nameFont) {
+    if (!selectedFonts.nameFont) {
       return {
         ok: false,
         error: {
           stage: 'font',
           fieldErrors: [],
-          message: 'A name font file is required for the "name + numbers" style.',
+          message: 'A name font is required for the "name + numbers" style.',
         },
       };
     }
     const nameFontResult = fonts.register(
       'nameFont',
-      uploadedFonts.nameFont.buffer,
+      selectedFonts.nameFont.buffer,
     );
     if (!nameFontResult.ok) {
       return {

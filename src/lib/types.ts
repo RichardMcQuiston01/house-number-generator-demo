@@ -14,6 +14,7 @@ import type {
   Unit,
   ValidationError,
 } from '@richardmcquiston01/house-number-generator';
+import {DEFAULT_FONT_ID} from './fonts';
 
 export type {
   AssemblyConfig,
@@ -27,13 +28,9 @@ export type {
   ValidationError,
 };
 
-/** Which of the two font slots a font upload fills. */
-export type FontSlotId = 'numberFont' | 'nameFont';
-
-/** A font file the user uploaded for one slot, kept in memory for regeneration. */
-export interface UploadedFontFile {
-  readonly slot: FontSlotId;
-  readonly fileName: string;
+/** A bundled font's bytes, fetched and ready to register with the package's font registry. */
+export interface ResolvedFont {
+  readonly fontId: string;
   readonly familyName: string;
   readonly buffer: ArrayBuffer;
 }
@@ -78,6 +75,8 @@ export interface SignFormState {
   readonly style: SignStyle;
   readonly houseNumber: string;
   readonly name: string;
+  readonly numberFontId: string;
+  readonly nameFontId: string;
   readonly shape: SignShape;
   readonly numberHeight: number;
   readonly nameHeight: number | undefined;
@@ -92,6 +91,8 @@ export const DEFAULT_FORM_STATE: SignFormState = {
   style: 'numbersOnly',
   houseNumber: '742',
   name: '',
+  numberFontId: DEFAULT_FONT_ID,
+  nameFontId: DEFAULT_FONT_ID,
   shape: 'rectangle',
   numberHeight: 4,
   nameHeight: undefined,

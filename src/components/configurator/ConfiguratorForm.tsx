@@ -2,13 +2,13 @@ import type {FormEvent} from 'react';
 import type {UseSignGeneratorApi} from '../../lib/useSignGenerator';
 import {
   ASSEMBLY_OPTIONS,
+  FONT_OPTIONS,
   FORMAT_OPTIONS,
   SCREW_SIZE_OPTIONS,
   SHAPE_OPTIONS,
   STYLE_OPTIONS,
   UNIT_OPTIONS,
 } from './constants';
-import {FontUploadField} from './FontUploadField';
 import {GenerationErrors} from './GenerationErrors';
 import {NumberField} from './NumberField';
 import {RadioGroup} from './RadioGroup';
@@ -77,26 +77,23 @@ export function ConfiguratorForm(props: ConfiguratorFormProps): JSX.Element {
       <section className="space-y-4">
         <h2 className={SECTION_HEADING_CLASSES}>Fonts</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <FontUploadField
-            slot="numberFont"
+          <SelectField
+            id="configurator-number-font"
             label="Number font"
-            uploadedFont={api.uploadedFonts.numberFont}
-            onUpload={api.uploadFont}
+            value={form.numberFontId}
+            options={FONT_OPTIONS}
+            onChange={numberFontId => api.updateForm({numberFontId})}
           />
           {isNameAndNumbers && (
-            <FontUploadField
-              slot="nameFont"
+            <SelectField
+              id="configurator-name-font"
               label="Name font"
-              uploadedFont={api.uploadedFonts.nameFont}
-              onUpload={api.uploadFont}
+              value={form.nameFontId}
+              options={FONT_OPTIONS}
+              onChange={nameFontId => api.updateForm({nameFontId})}
             />
           )}
         </div>
-        {api.fontUploadError && (
-          <p role="alert" className="text-xs text-red-600 dark:text-red-400">
-            {api.fontUploadError}
-          </p>
-        )}
       </section>
 
       <section className="space-y-4">

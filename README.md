@@ -40,7 +40,7 @@ npm run format:check # check formatting without writing
 
 1. Open the app and choose a sign style: **Numbers only**, or **Name + numbers**.
 2. Enter the house number (and name, if applicable).
-3. Upload a TrueType (`.ttf`) or OpenType (`.otf`) font file for the number text (and name text, if applicable) — any font you have the rights to use, such as a free font from Google Fonts or [DejaVu Sans](https://dejavu-fonts.github.io/).
+3. Pick a font for the number text (and name text, if applicable) from the bundled font dropdown (see `public/fonts/THIRD-PARTY-LICENSES.md` for attribution).
 4. Choose the sign shape, dimensions, margin, unit, and assembly type (hardware with a screw size, or adhesive).
 5. Click **Generate Sign** to see an assembled preview and download the per-piece SVG/DXF cut files individually or all together as a ZIP.
 
