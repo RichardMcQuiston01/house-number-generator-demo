@@ -59,6 +59,14 @@ export function FileGallery({files}: FileGalleryProps): JSX.Element {
   );
   const pieceCount = useMemo(() => groupFilesIntoPieces(files).length, [files]);
   const [isZipping, setIsZipping] = useState(false);
+  const [selectedTab, setSelectedTab] = useState<GeneratedFileKind | undefined>(
+    groups[0]?.[0],
+  );
+
+  const activeKind = groups.some(([kind]) => kind === selectedTab)
+    ? selectedTab
+    : groups[0]?.[0];
+  const activeGroup = groups.find(([kind]) => kind === activeKind);
 
   const handleDownloadAll = async (): Promise<void> => {
     setIsZipping(true);
@@ -84,20 +92,35 @@ export function FileGallery({files}: FileGalleryProps): JSX.Element {
           {isZipping ? 'Zipping…' : 'Download All (ZIP)'}
         </button>
       </div>
-      <div className="mt-4 space-y-5">
+
+      <div
+        role="tablist"
+        aria-label="Piece category"
+        className="mt-4 flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800"
+      >
         {groups.map(([kind, groupPieces]) => (
-          <div key={kind}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              {KIND_LABELS[kind]}
-            </p>
-            <ul className="mt-2 space-y-2">
-              {groupPieces.map(piece => (
-                <FilePieceItem key={piece.baseName} piece={piece} />
-              ))}
-            </ul>
-          </div>
+          <button
+            key={kind}
+            type="button"
+            role="tab"
+            aria-selected={kind === activeKind}
+            onClick={() => setSelectedTab(kind)}
+            className={`-mb-px rounded-t-md border-b-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+              kind === activeKind
+                ? 'border-brand-600 text-brand-700 dark:border-brand-400 dark:text-brand-300'
+                : 'border-transparent text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
+            }`}
+          >
+            {KIND_LABELS[kind]} ({groupPieces.length})
+          </button>
         ))}
       </div>
+
+      <ul className="mt-4 space-y-2">
+        {activeGroup?.[1].map(piece => (
+          <FilePieceItem key={piece.baseName} piece={piece} />
+        ))}
+      </ul>
     </div>
   );
 }

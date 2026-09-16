@@ -4,13 +4,11 @@ import {
   ASSEMBLY_OPTIONS,
   FILE_GROUPING_OPTIONS,
   FONT_OPTIONS,
-  FORMAT_OPTIONS,
   SCREW_SIZE_OPTIONS,
   SHAPE_OPTIONS,
   STYLE_OPTIONS,
   UNIT_OPTIONS,
 } from './constants';
-import {CheckboxField} from './CheckboxField';
 import {GenerationErrors} from './GenerationErrors';
 import {NumberField} from './NumberField';
 import {RadioGroup} from './RadioGroup';
@@ -40,6 +38,20 @@ export function ConfiguratorForm(props: ConfiguratorFormProps): JSX.Element {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          Configure your sign
+        </h3>
+        <button
+          type="submit"
+          disabled={api.isGenerating}
+          aria-busy={api.isGenerating}
+          className="inline-flex items-center justify-center rounded-md bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {api.isGenerating ? 'Generating…' : 'Generate Sign'}
+        </button>
+      </div>
+
       <section className="space-y-4">
         <h2 className={SECTION_HEADING_CLASSES}>Style</h2>
         <RadioGroup
@@ -171,15 +183,6 @@ export function ConfiguratorForm(props: ConfiguratorFormProps): JSX.Element {
 
       <section className="space-y-4">
         <h2 className={SECTION_HEADING_CLASSES}>Output</h2>
-        <div className="max-w-xs">
-          <SelectField
-            id="configurator-format"
-            label="Output format"
-            value={form.format}
-            options={FORMAT_OPTIONS}
-            onChange={format => api.updateForm({format})}
-          />
-        </div>
         <RadioGroup
           name="configurator-file-grouping"
           legend="Cut file grouping"
@@ -187,27 +190,9 @@ export function ConfiguratorForm(props: ConfiguratorFormProps): JSX.Element {
           options={FILE_GROUPING_OPTIONS}
           onChange={fileGrouping => api.updateForm({fileGrouping})}
         />
-        <CheckboxField
-          id="configurator-multi-layer-svg"
-          label="Include a multi-layer combined SVG"
-          checked={form.includeMultiLayerSvg}
-          onChange={includeMultiLayerSvg =>
-            api.updateForm({includeMultiLayerSvg})
-          }
-          hint="One SVG with the backer, numbers, and name each on their own colored layer."
-        />
       </section>
 
       <GenerationErrors outcome={api.result} />
-
-      <button
-        type="submit"
-        disabled={api.isGenerating}
-        aria-busy={api.isGenerating}
-        className="inline-flex items-center justify-center rounded-md bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {api.isGenerating ? 'Generating…' : 'Generate Sign'}
-      </button>
     </form>
   );
 }

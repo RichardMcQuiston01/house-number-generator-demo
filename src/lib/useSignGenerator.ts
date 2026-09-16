@@ -50,9 +50,9 @@ export function useSignGenerator(
 
       const config = buildSignConfig(form);
       const outcome = generateSignFiles(config, {numberFont, nameFont}, {
-        format: form.format,
+        format: 'both',
         fileGrouping: form.fileGrouping,
-        includeMultiLayerSvg: form.includeMultiLayerSvg,
+        includeMultiLayerSvg: true,
       });
       setResult(outcome);
     } catch (error) {
