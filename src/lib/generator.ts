@@ -7,6 +7,7 @@ import {
 } from '@richardmcquiston01/house-number-generator';
 import type {LoadedFont} from '@richardmcquiston01/house-number-generator';
 import {buildGroupedDxfFile, buildGroupedSvgFile} from './groupedFiles';
+import {improveHolePlacement} from './holePlacement';
 import {buildMultiLayerSvg} from './multiLayerSvg';
 import type {
   FileGrouping,
@@ -18,6 +19,12 @@ import type {
   SignFormState,
   SignGenerationOutcome,
 } from './types';
+
+// M4's hole (4mm + the package's clearance = 4.5mm / ~0.18in) comfortably
+// passes both common metric (M3, M4) and SAE (#4, #6, #8) hardware, so
+// hardware assembly always uses this one size instead of asking which
+// screw the user has.
+const UNIVERSAL_SCREW_SIZE = 'M4';
 
 /** Converts UI form state into the package's `SignConfig`, fixing font ids to the registry slots used by {@link generateSignFiles}. */
 export function buildSignConfig(form: SignFormState): SignConfig {
@@ -36,7 +43,7 @@ export function buildSignConfig(form: SignFormState): SignConfig {
     unit: form.unit,
     assembly:
       form.assemblyType === 'hardware'
-        ? {type: 'hardware', screwSize: form.screwSize}
+        ? {type: 'hardware', screwSize: UNIVERSAL_SCREW_SIZE}
         : {type: 'adhesive'},
   };
 }
@@ -147,7 +154,7 @@ export function generateSignFiles(
       },
     };
   }
-  const layout = layoutResult.value;
+  const layout = improveHolePlacement(layoutResult.value);
 
   const {format, fileGrouping, includeMultiLayerSvg} = options;
   const wantsSvg = format === 'svg' || format === 'both';

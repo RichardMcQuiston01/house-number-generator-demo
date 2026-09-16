@@ -6,7 +6,6 @@
 import type {
   AssemblyConfig,
   GeneratedFile,
-  ScrewSize,
   SignConfig,
   SignLayout,
   SignShape,
@@ -19,7 +18,6 @@ import {DEFAULT_FONT_ID} from './fonts';
 export type {
   AssemblyConfig,
   GeneratedFile,
-  ScrewSize,
   SignConfig,
   SignLayout,
   SignShape,
@@ -89,7 +87,6 @@ export interface SignFormState {
   readonly margin: number;
   readonly unit: Unit;
   readonly assemblyType: AssemblyConfig['type'];
-  readonly screwSize: ScrewSize;
   readonly fileGrouping: FileGrouping;
 }
 
@@ -105,17 +102,5 @@ export const DEFAULT_FORM_STATE: SignFormState = {
   margin: 0.5,
   unit: 'in',
   assemblyType: 'hardware',
-  screwSize: 'M3',
   fileGrouping: 'individual',
 };
-
-export const SCREW_SIZES: readonly ScrewSize[] = [
-  'M3',
-  'M4',
-  'M5',
-  '#4-40',
-  '#6-32',
-  '#8-32',
-  '#10-24',
-  '1/4-20',
-];

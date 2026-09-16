@@ -2,12 +2,10 @@ import {FONT_CATALOG} from '../../lib/fonts';
 import type {
   AssemblyConfig,
   FileGrouping,
-  ScrewSize,
   SignShape,
   SignStyle,
   Unit,
 } from '../../lib/types';
-import {SCREW_SIZES} from '../../lib/types';
 
 export interface SelectOption<T extends string> {
   readonly value: T;
@@ -39,9 +37,6 @@ export const ASSEMBLY_OPTIONS: readonly SelectOption<AssemblyConfig['type']>[] =
     {value: 'hardware', label: 'Hardware (screws)'},
     {value: 'adhesive', label: 'Adhesive'},
   ];
-
-export const SCREW_SIZE_OPTIONS: readonly SelectOption<ScrewSize>[] =
-  SCREW_SIZES.map(size => ({value: size, label: size}));
 
 export const FILE_GROUPING_OPTIONS: readonly SelectOption<FileGrouping>[] = [
   {value: 'individual', label: 'Individual (one file per glyph)'},
