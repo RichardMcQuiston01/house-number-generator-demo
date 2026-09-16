@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Two mounting holes per glyph** instead of one, so a piece can't spin
+  around a single screw once installed. `src/lib/holePlacement.ts` now
+  picks the glyph's point of maximum clearance for the first hole and the
+  point of maximum distance from it (subject to its own clearance check)
+  for the second, falling back to one hole when a glyph is too small/thin
+  to safely fit both. Individual-file mode now builds each glyph's file
+  directly (rather than delegating to the package's one-hole-per-glyph
+  generators) so it can carry both holes; grouped files and the
+  multi-layer SVG already consumed a flat hole list and pick this up for
+  free.
+
 - Cut file grouping choice: **Individual** (one SVG/DXF per glyph, the
   original behavior) or **Grouped** (one combined SVG/DXF for all number
   glyphs, and one for all name glyphs) — `src/lib/groupedFiles.ts`. The
@@ -39,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The default cut file grouping is now **Grouped** (one combined SVG/DXF
+  per number/name group) instead of **Individual**.
 - Hardware assembly now always uses one universal screw hole size (M4's
   hole, ~4.5mm/0.18in, which comfortably fits both common metric and SAE
   small hardware) instead of asking which of eight screw sizes to use —
