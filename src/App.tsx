@@ -1,4 +1,5 @@
 import {ConfiguratorForm} from './components/configurator';
+import {DonateCard} from './components/layout/DonateCard';
 import {Footer} from './components/layout/Footer';
 import {Header} from './components/layout/Header';
 import {Hero} from './components/layout/Hero';
@@ -21,6 +22,7 @@ export default function App(): JSX.Element {
         </div>
       </main>
       <Footer />
+      <DonateCard />
     </div>
   );
 }

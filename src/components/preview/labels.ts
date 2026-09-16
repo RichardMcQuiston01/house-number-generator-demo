@@ -19,7 +19,7 @@ export function describeStage(stage: SignGenerationError['stage']): string {
     case 'validation':
       return 'One or more configuration values need to be fixed before a sign can be generated.';
     case 'font':
-      return 'There was a problem with an uploaded font file.';
+      return 'There was a problem loading the selected font.';
     case 'layout':
       return 'The sign layout could not be computed from the current settings.';
   }

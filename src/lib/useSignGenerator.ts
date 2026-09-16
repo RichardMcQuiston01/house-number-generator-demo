@@ -1,35 +1,35 @@
 import {useCallback, useState} from 'react';
-import {buildSignConfig, generateSignFiles, loadUploadedFont} from './generator';
+import {buildSignConfig, generateSignFiles} from './generator';
+import {fetchCatalogFontBuffer, findFontCatalogEntry} from './fonts';
 import {
   DEFAULT_FORM_STATE,
-  type FontSlotId,
+  type ResolvedFont,
   type SignFormState,
   type SignGenerationOutcome,
-  type UploadedFontFile,
 } from './types';
 
 export interface UseSignGeneratorApi {
   readonly form: SignFormState;
   readonly updateForm: (patch: Partial<SignFormState>) => void;
-  readonly uploadedFonts: Partial<Record<FontSlotId, UploadedFontFile>>;
-  readonly fontUploadError: string | undefined;
-  readonly uploadFont: (slot: FontSlotId, file: File) => Promise<void>;
   readonly isGenerating: boolean;
   readonly result: SignGenerationOutcome | undefined;
   readonly generate: () => Promise<void>;
 }
 
-/** Owns form state, uploaded fonts, and the generated result for the sign configurator. */
+async function resolveFont(fontId: string): Promise<ResolvedFont> {
+  const entry = findFontCatalogEntry(fontId);
+  if (!entry) {
+    throw new Error(`Unknown font "${fontId}".`);
+  }
+  const buffer = await fetchCatalogFontBuffer(entry);
+  return {fontId: entry.id, familyName: entry.familyName, buffer};
+}
+
+/** Owns form state, resolves the selected bundled fonts, and runs generation for the sign configurator. */
 export function useSignGenerator(
   initialForm: SignFormState = DEFAULT_FORM_STATE,
 ): UseSignGeneratorApi {
   const [form, setForm] = useState<SignFormState>(initialForm);
-  const [uploadedFonts, setUploadedFonts] = useState<
-    Partial<Record<FontSlotId, UploadedFontFile>>
-  >({});
-  const [fontUploadError, setFontUploadError] = useState<string | undefined>(
-    undefined,
-  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<SignGenerationOutcome | undefined>(
     undefined,
@@ -39,50 +39,42 @@ export function useSignGenerator(
     setForm(previous => ({...previous, ...patch}));
   }, []);
 
-  const uploadFont = useCallback(async (slot: FontSlotId, file: File) => {
-    const loaded = await loadUploadedFont(slot, file);
-    if (!loaded.ok) {
-      setFontUploadError(loaded.message);
-      return;
-    }
-    setFontUploadError(undefined);
-    setUploadedFonts(previous => ({...previous, [slot]: loaded.value}));
-  }, []);
-
   const generate = useCallback(async () => {
-    const numberFont = uploadedFonts.numberFont;
-    if (!numberFont) {
+    setIsGenerating(true);
+    try {
+      const numberFont = await resolveFont(form.numberFontId);
+      const nameFont =
+        form.style === 'nameAndNumbers'
+          ? await resolveFont(form.nameFontId)
+          : undefined;
+
+      const config = buildSignConfig(form);
+      const outcome = generateSignFiles(
+        config,
+        {numberFont, nameFont},
+        form.format,
+      );
+      setResult(outcome);
+    } catch (error) {
       setResult({
         ok: false,
         error: {
           stage: 'font',
           fieldErrors: [],
-          message: 'Upload a font file for the house number before generating.',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to load the selected font.',
         },
       });
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const config = buildSignConfig(form);
-      const outcome = generateSignFiles(
-        config,
-        {numberFont, nameFont: uploadedFonts.nameFont},
-        form.format,
-      );
-      setResult(outcome);
     } finally {
       setIsGenerating(false);
     }
-  }, [form, uploadedFonts]);
+  }, [form]);
 
   return {
     form,
     updateForm,
-    uploadedFonts,
-    fontUploadError,
-    uploadFont,
     isGenerating,
     result,
     generate,

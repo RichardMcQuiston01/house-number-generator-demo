@@ -1,3 +1,4 @@
+import {FONT_CATALOG} from '../../lib/fonts';
 import type {
   AssemblyConfig,
   OutputFormat,
@@ -12,6 +13,10 @@ export interface SelectOption<T extends string> {
   readonly value: T;
   readonly label: string;
 }
+
+export const FONT_OPTIONS: readonly SelectOption<string>[] = FONT_CATALOG.map(
+  entry => ({value: entry.id, label: entry.label}),
+);
 
 export const STYLE_OPTIONS: readonly SelectOption<SignStyle>[] = [
   {value: 'numbersOnly', label: 'Numbers only'},
