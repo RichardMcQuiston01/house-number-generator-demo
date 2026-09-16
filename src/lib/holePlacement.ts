@@ -6,44 +6,74 @@ import type {
 } from '@richardmcquiston01/house-number-generator';
 
 /**
- * The package centers each glyph's mounting hole on the glyph's bounding-box
- * center, which frequently lands outside the glyph's actual ink for
- * asymmetric or open shapes (e.g. "1", "7", "T", "L") — the hole ends up in
- * empty space rather than in material. Recomputes each hole's center as the
- * point of maximum clearance from the glyph's own outline (its "pole of
- * inaccessibility"), which stays within solid material whenever the glyph's
- * stroke is thick enough to contain the hole at all. Diameters are left
- * untouched — only positions move. Engraving marks on the backer are moved
- * to match, since they mirror the number/name holes at the same indices.
+ * The package centers each glyph's single mounting hole on the glyph's
+ * bounding-box center, which frequently lands outside the glyph's actual
+ * ink for asymmetric or open shapes (e.g. "1", "7", "T", "L"), and one hole
+ * per piece lets it rotate around the screw anyway. This recomputes two
+ * well-separated hole centers per glyph — each the deepest interior point
+ * available, so both stay within solid material, and the second maximizes
+ * distance from the first for anti-rotation leverage — falling back to one
+ * hole when the glyph is too thin/small to safely fit a second. Diameters
+ * are left untouched. Engraving marks on the backer are recomputed to
+ * match, one per relocated hole.
  */
-export function improveHolePlacement(layout: SignLayout): SignLayout {
-  const numberHoles = layout.numberHoles?.map((hole, index) =>
-    relocateHole(hole, layout.numberGlyphs[index]),
-  );
-  const nameHoles =
+export interface RelocatedHoles {
+  readonly numberHolesByGlyph: readonly (readonly MountingHole[])[];
+  readonly nameHolesByGlyph: readonly (readonly MountingHole[])[] | undefined;
+  readonly numberHoles: readonly MountingHole[];
+  readonly nameHoles: readonly MountingHole[] | undefined;
+  readonly engravingMarks: readonly MountingHole[] | undefined;
+}
+
+const HOLES_PER_GLYPH = 2;
+// Extra clearance beyond the bare screw-hole radius required before a
+// candidate point counts as "safely" inside material.
+const CLEARANCE_MARGIN = 1.15;
+
+export function improveHolePlacement(layout: SignLayout): RelocatedHoles {
+  const numberHolesByGlyph =
+    layout.numberHoles?.map((hole, index) =>
+      relocateGlyphHoles(hole, layout.numberGlyphs[index]),
+    ) ?? layout.numberGlyphs.map(() => []);
+
+  const nameHolesByGlyph =
     layout.nameHoles && layout.nameGlyphs
       ? layout.nameHoles.map((hole, index) =>
-          relocateHole(hole, (layout.nameGlyphs as readonly PositionedGlyph[])[index]),
+          relocateGlyphHoles(
+            hole,
+            (layout.nameGlyphs as readonly PositionedGlyph[])[index],
+          ),
         )
-      : layout.nameHoles;
+      : undefined;
 
-  const relocated = [...(numberHoles ?? []), ...(nameHoles ?? [])];
-  const engravingMarks = layout.engravingMarks?.map((mark, index) => ({
-    ...mark,
-    center: relocated[index]?.center ?? mark.center,
-  }));
+  const numberHoles = numberHolesByGlyph.flat();
+  const nameHoles = nameHolesByGlyph?.flat();
+  const relocated = [...numberHoles, ...(nameHoles ?? [])];
+
+  const markDiameter = layout.engravingMarks?.[0]?.diameter;
+  const engravingMarks =
+    layout.engravingMarks && markDiameter !== undefined
+      ? relocated.map(hole => ({center: hole.center, diameter: markDiameter}))
+      : layout.engravingMarks;
 
   return {
-    ...layout,
-    ...(numberHoles ? {numberHoles} : {}),
-    ...(nameHoles ? {nameHoles} : {}),
-    ...(engravingMarks ? {engravingMarks} : {}),
+    numberHolesByGlyph,
+    nameHolesByGlyph,
+    numberHoles,
+    nameHoles,
+    engravingMarks,
   };
 }
 
-function relocateHole(hole: MountingHole, glyph: PositionedGlyph): MountingHole {
-  const center = deepestInteriorPoint(glyph.path);
-  return center ? {...hole, center} : hole;
+function relocateGlyphHoles(
+  hole: MountingHole,
+  glyph: PositionedGlyph,
+): readonly MountingHole[] {
+  const centers = findHoleCenters(glyph.path, HOLES_PER_GLYPH, hole.diameter / 2);
+  if (centers.length === 0) {
+    return [hole];
+  }
+  return centers.map(center => ({...hole, center}));
 }
 
 // ---- geometry ----
@@ -64,6 +94,12 @@ interface Ring {
   readonly points: readonly Point[];
   readonly area: number;
   readonly bbox: BBox;
+}
+
+interface ScoredPoint {
+  readonly point: Point;
+  readonly clearance: number;
+  readonly score: number;
 }
 
 const BEZIER_SEGMENTS = 12;
@@ -212,51 +248,86 @@ function distanceToRing(point: Point, ring: readonly Point[]): number {
   return min;
 }
 
-interface SearchResult {
-  readonly point: Point;
-  readonly clearance: number;
+function isInside(point: Point, outer: Ring, holes: readonly Ring[]): boolean {
+  if (!pointInRing(point, outer.points)) {
+    return false;
+  }
+  return !holes.some(hole => pointInRing(point, hole.points));
 }
 
-/** Finds the point inside `outer` (and outside every ring in `holes`) with the largest minimum distance to any ring's edge, searching a grid over `bounds`. */
+function clearanceAt(point: Point, outer: Ring, holes: readonly Ring[]): number {
+  let clearance = distanceToRing(point, outer.points);
+  for (const hole of holes) {
+    clearance = Math.min(clearance, distanceToRing(point, hole.points));
+  }
+  return clearance;
+}
+
+/** Grid search over `bounds` for the interior point maximizing `score`. */
 function searchGrid(
   bounds: BBox,
   steps: number,
   outer: Ring,
   holes: readonly Ring[],
-): SearchResult | undefined {
+  score: (point: Point, clearance: number) => number | undefined,
+): ScoredPoint | undefined {
   const stepX = (bounds.maxX - bounds.minX) / steps;
   const stepY = (bounds.maxY - bounds.minY) / steps;
   if (!(stepX > 0) || !(stepY > 0)) {
     return undefined;
   }
 
-  let best: SearchResult | undefined;
+  let best: ScoredPoint | undefined;
   for (let i = 0; i <= steps; i += 1) {
     for (let j = 0; j <= steps; j += 1) {
-      const candidate: Point = {
-        x: bounds.minX + stepX * i,
-        y: bounds.minY + stepY * j,
-      };
-      if (!pointInRing(candidate, outer.points)) {
+      const point: Point = {x: bounds.minX + stepX * i, y: bounds.minY + stepY * j};
+      if (!isInside(point, outer, holes)) {
         continue;
       }
-      if (holes.some(hole => pointInRing(candidate, hole.points))) {
+      const clearance = clearanceAt(point, outer, holes);
+      const value = score(point, clearance);
+      if (value === undefined) {
         continue;
       }
-      let clearance = distanceToRing(candidate, outer.points);
-      for (const hole of holes) {
-        clearance = Math.min(clearance, distanceToRing(candidate, hole.points));
-      }
-      if (!best || clearance > best.clearance) {
-        best = {point: candidate, clearance};
+      if (!best || value > best.score) {
+        best = {point, clearance, score: value};
       }
     }
   }
   return best;
 }
 
-/** The point deepest inside a (possibly multi-contour) glyph outline, or `undefined` if the path has no usable area (e.g. a space). */
-function deepestInteriorPoint(path: readonly PathCommand[]): Point | undefined {
+/** Two-pass (coarse grid + refine around the coarse winner) search maximizing `score`. */
+function findBestPoint(
+  outer: Ring,
+  holes: readonly Ring[],
+  score: (point: Point, clearance: number) => number | undefined,
+): ScoredPoint | undefined {
+  const coarse = searchGrid(outer.bbox, COARSE_GRID_STEPS, outer, holes, score);
+  if (!coarse) {
+    return undefined;
+  }
+  const halfWidth = (outer.bbox.maxX - outer.bbox.minX) / COARSE_GRID_STEPS;
+  const halfHeight = (outer.bbox.maxY - outer.bbox.minY) / COARSE_GRID_STEPS;
+  const refined = searchGrid(
+    {
+      minX: coarse.point.x - halfWidth,
+      maxX: coarse.point.x + halfWidth,
+      minY: coarse.point.y - halfHeight,
+      maxY: coarse.point.y + halfHeight,
+    },
+    REFINE_GRID_STEPS,
+    outer,
+    holes,
+    score,
+  );
+  return refined && refined.score > coarse.score ? refined : coarse;
+}
+
+function outerAndHoleRings(path: readonly PathCommand[]): {
+  outer: Ring;
+  holes: readonly Ring[];
+} | undefined {
   const rings: Ring[] = flattenToRings(path).map(points => ({
     points,
     area: Math.abs(ringArea(points)),
@@ -265,32 +336,52 @@ function deepestInteriorPoint(path: readonly PathCommand[]): Point | undefined {
   if (rings.length === 0) {
     return undefined;
   }
-
   rings.sort((a, b) => b.area - a.area);
   const [outer, ...rest] = rings;
   if (outer.area <= 0) {
     return undefined;
   }
-  const holes = rest.filter(ring => bboxContains(outer.bbox, ring.bbox));
+  return {outer, holes: rest.filter(ring => bboxContains(outer.bbox, ring.bbox))};
+}
 
-  const coarse = searchGrid(outer.bbox, COARSE_GRID_STEPS, outer, holes);
-  if (!coarse) {
-    return undefined;
+/**
+ * Up to `count` well-separated points inside a glyph outline. The first is
+ * the point of maximum clearance from the outline; each subsequent point
+ * maximizes distance from every point already chosen, among candidates with
+ * at least `minRadius * CLEARANCE_MARGIN` clearance so the hole actually
+ * fits. Returns fewer than `count` points (possibly zero) when the glyph
+ * can't safely fit that many.
+ */
+function findHoleCenters(
+  path: readonly PathCommand[],
+  count: number,
+  minRadius: number,
+): readonly Point[] {
+  const rings = outerAndHoleRings(path);
+  if (!rings) {
+    return [];
+  }
+  const {outer, holes} = rings;
+
+  const first = findBestPoint(outer, holes, (_point, clearance) => clearance);
+  if (!first) {
+    return [];
+  }
+  const chosen: Point[] = [first.point];
+
+  const requiredClearance = minRadius * CLEARANCE_MARGIN;
+  while (chosen.length < count) {
+    const next = findBestPoint(outer, holes, (point, clearance) => {
+      if (clearance < requiredClearance) {
+        return undefined;
+      }
+      return Math.min(...chosen.map(c => Math.hypot(point.x - c.x, point.y - c.y)));
+    });
+    if (!next) {
+      break;
+    }
+    chosen.push(next.point);
   }
 
-  const refineHalfWidth = (outer.bbox.maxX - outer.bbox.minX) / COARSE_GRID_STEPS;
-  const refineHalfHeight = (outer.bbox.maxY - outer.bbox.minY) / COARSE_GRID_STEPS;
-  const refined = searchGrid(
-    {
-      minX: coarse.point.x - refineHalfWidth,
-      maxX: coarse.point.x + refineHalfWidth,
-      minY: coarse.point.y - refineHalfHeight,
-      maxY: coarse.point.y + refineHalfHeight,
-    },
-    REFINE_GRID_STEPS,
-    outer,
-    holes,
-  );
-
-  return (refined && refined.clearance > coarse.clearance ? refined : coarse).point;
+  return chosen;
 }

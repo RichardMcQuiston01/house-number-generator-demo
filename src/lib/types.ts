@@ -102,5 +102,5 @@ export const DEFAULT_FORM_STATE: SignFormState = {
   margin: 0.5,
   unit: 'in',
   assemblyType: 'hardware',
-  fileGrouping: 'individual',
+  fileGrouping: 'grouped',
 };

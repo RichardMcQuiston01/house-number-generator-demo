@@ -5,19 +5,23 @@ import {
   generateSvgFiles,
   validateSignConfig,
 } from '@richardmcquiston01/house-number-generator';
-import type {LoadedFont} from '@richardmcquiston01/house-number-generator';
+import type {
+  LoadedFont,
+  MountingHole,
+  PositionedGlyph,
+} from '@richardmcquiston01/house-number-generator';
 import {buildGroupedDxfFile, buildGroupedSvgFile} from './groupedFiles';
 import {improveHolePlacement} from './holePlacement';
 import {buildMultiLayerSvg} from './multiLayerSvg';
 import type {
   FileGrouping,
-  GeneratedFileKind,
   GeneratedFilePreview,
   OutputFormat,
   ResolvedFont,
   SignConfig,
   SignFormState,
   SignGenerationOutcome,
+  Unit,
 } from './types';
 
 // M4's hole (4mm + the package's clearance = 4.5mm / ~0.18in) comfortably
@@ -48,16 +52,34 @@ export function buildSignConfig(form: SignFormState): SignConfig {
   };
 }
 
-function classifyFileName(
-  name: string,
-): {kind: GeneratedFileKind; format: 'svg' | 'dxf'} {
-  const format = name.endsWith('.dxf') ? 'dxf' : 'svg';
-  const kind: GeneratedFileKind = name.startsWith('number-')
-    ? 'number'
-    : name.startsWith('name-')
-      ? 'name'
-      : 'backer';
-  return {kind, format};
+/**
+ * Emits one SVG/DXF file per glyph (`number-0-7.svg`, `name-1-o.dxf`, ...),
+ * carrying that glyph's own relocated holes. The package's own per-glyph
+ * generators only ever draw one hole per file, so glyphs get more than one
+ * hole via {@link buildGroupedSvgFile}/{@link buildGroupedDxfFile} called
+ * with a single-glyph array instead.
+ */
+function pushIndividualGlyphFiles(
+  files: GeneratedFilePreview[],
+  glyphs: readonly PositionedGlyph[],
+  holesByGlyph: readonly (readonly MountingHole[])[],
+  kind: 'number' | 'name',
+  unit: Unit,
+  wantsSvg: boolean,
+  wantsDxf: boolean,
+): void {
+  glyphs.forEach((glyph, index) => {
+    const holes = holesByGlyph[index];
+    const baseName = `${kind}-${index}-${glyph.character}`;
+    if (wantsSvg) {
+      const file = buildGroupedSvgFile(`${baseName}.svg`, [glyph], holes, unit);
+      if (file) files.push({...file, kind, format: 'svg'});
+    }
+    if (wantsDxf) {
+      const file = buildGroupedDxfFile(`${baseName}.dxf`, [glyph], holes, unit);
+      if (file) files.push({...file, kind, format: 'dxf'});
+    }
+  });
 }
 
 export interface GenerateSignFilesOptions {
@@ -154,7 +176,15 @@ export function generateSignFiles(
       },
     };
   }
-  const layout = improveHolePlacement(layoutResult.value);
+  const relocated = improveHolePlacement(layoutResult.value);
+  const layout = {
+    ...layoutResult.value,
+    numberHoles: relocated.numberHoles,
+    ...(relocated.nameHoles !== undefined ? {nameHoles: relocated.nameHoles} : {}),
+    ...(relocated.engravingMarks !== undefined
+      ? {engravingMarks: relocated.engravingMarks}
+      : {}),
+  };
 
   const {format, fileGrouping, includeMultiLayerSvg} = options;
   const wantsSvg = format === 'svg' || format === 'both';
@@ -163,15 +193,37 @@ export function generateSignFiles(
   const files: GeneratedFilePreview[] = [];
 
   if (fileGrouping === 'individual') {
+    pushIndividualGlyphFiles(
+      files,
+      layout.numberGlyphs,
+      relocated.numberHolesByGlyph,
+      'number',
+      config.unit,
+      wantsSvg,
+      wantsDxf,
+    );
+    if (layout.nameGlyphs && relocated.nameHolesByGlyph) {
+      pushIndividualGlyphFiles(
+        files,
+        layout.nameGlyphs,
+        relocated.nameHolesByGlyph,
+        'name',
+        config.unit,
+        wantsSvg,
+        wantsDxf,
+      );
+    }
     if (wantsSvg) {
-      for (const file of generateSvgFiles(layout, config.unit)) {
-        files.push({...file, ...classifyFileName(file.name)});
-      }
+      const backer = generateSvgFiles(layout, config.unit).find(
+        file => file.name === 'backer.svg',
+      );
+      if (backer) files.push({...backer, kind: 'backer', format: 'svg'});
     }
     if (wantsDxf) {
-      for (const file of generateDxfFiles(layout, config.unit)) {
-        files.push({...file, ...classifyFileName(file.name)});
-      }
+      const backer = generateDxfFiles(layout, config.unit).find(
+        file => file.name === 'backer.dxf',
+      );
+      if (backer) files.push({...backer, kind: 'backer', format: 'dxf'});
     }
   } else {
     if (wantsSvg) {
