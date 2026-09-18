@@ -6,16 +6,15 @@ import type {
 } from '@richardmcquiston01/house-number-generator';
 
 /**
- * The package centers each glyph's single mounting hole on the glyph's
- * bounding-box center, which frequently lands outside the glyph's actual
- * ink for asymmetric or open shapes (e.g. "1", "7", "T", "L"), and one hole
- * per piece lets it rotate around the screw anyway. This recomputes two
- * well-separated hole centers per glyph — each the deepest interior point
- * available, so both stay within solid material, and the second maximizes
- * distance from the first for anti-rotation leverage — falling back to one
- * hole when the glyph is too thin/small to safely fit a second. Diameters
- * are left untouched. Engraving marks on the backer are recomputed to
- * match, one per relocated hole.
+ * The package (v0.1.1+) already places each glyph's single mounting hole at
+ * the glyph's own deepest interior point ("pole of inaccessibility"), so it
+ * always lands on solid material. But one hole per piece still lets it
+ * rotate around the screw once installed, so this adds a second
+ * well-separated hole per glyph — the point maximizing distance from the
+ * package's hole, subject to its own clearance check — falling back to just
+ * the package's hole when the glyph is too thin/small to safely fit a
+ * second. Diameters are left untouched. Engraving marks on the backer are
+ * recomputed to match, one per hole.
  */
 export interface RelocatedHoles {
   readonly numberHolesByGlyph: readonly (readonly MountingHole[])[];
@@ -33,13 +32,13 @@ const CLEARANCE_MARGIN = 1.15;
 export function improveHolePlacement(layout: SignLayout): RelocatedHoles {
   const numberHolesByGlyph =
     layout.numberHoles?.map((hole, index) =>
-      relocateGlyphHoles(hole, layout.numberGlyphs[index]),
+      addSecondHole(hole, layout.numberGlyphs[index]),
     ) ?? layout.numberGlyphs.map(() => []);
 
   const nameHolesByGlyph =
     layout.nameHoles && layout.nameGlyphs
       ? layout.nameHoles.map((hole, index) =>
-          relocateGlyphHoles(
+          addSecondHole(
             hole,
             (layout.nameGlyphs as readonly PositionedGlyph[])[index],
           ),
@@ -65,14 +64,16 @@ export function improveHolePlacement(layout: SignLayout): RelocatedHoles {
   };
 }
 
-function relocateGlyphHoles(
+function addSecondHole(
   hole: MountingHole,
   glyph: PositionedGlyph,
 ): readonly MountingHole[] {
-  const centers = findHoleCenters(glyph.path, HOLES_PER_GLYPH, hole.diameter / 2);
-  if (centers.length === 0) {
-    return [hole];
-  }
+  const centers = additionalHoleCenters(
+    glyph.path,
+    hole.center,
+    HOLES_PER_GLYPH,
+    hole.diameter / 2,
+  );
   return centers.map(center => ({...hole, center}));
 }
 
@@ -98,7 +99,6 @@ interface Ring {
 
 interface ScoredPoint {
   readonly point: Point;
-  readonly clearance: number;
   readonly score: number;
 }
 
@@ -263,13 +263,14 @@ function clearanceAt(point: Point, outer: Ring, holes: readonly Ring[]): number 
   return clearance;
 }
 
-/** Grid search over `bounds` for the interior point maximizing `score`. */
+/** Grid search over `bounds` for the interior point maximizing `score`, among candidates with at least `requiredClearance`. */
 function searchGrid(
   bounds: BBox,
   steps: number,
   outer: Ring,
   holes: readonly Ring[],
-  score: (point: Point, clearance: number) => number | undefined,
+  requiredClearance: number,
+  score: (point: Point) => number,
 ): ScoredPoint | undefined {
   const stepX = (bounds.maxX - bounds.minX) / steps;
   const stepY = (bounds.maxY - bounds.minY) / steps;
@@ -284,13 +285,12 @@ function searchGrid(
       if (!isInside(point, outer, holes)) {
         continue;
       }
-      const clearance = clearanceAt(point, outer, holes);
-      const value = score(point, clearance);
-      if (value === undefined) {
+      if (clearanceAt(point, outer, holes) < requiredClearance) {
         continue;
       }
+      const value = score(point);
       if (!best || value > best.score) {
-        best = {point, clearance, score: value};
+        best = {point, score: value};
       }
     }
   }
@@ -301,9 +301,10 @@ function searchGrid(
 function findBestPoint(
   outer: Ring,
   holes: readonly Ring[],
-  score: (point: Point, clearance: number) => number | undefined,
+  requiredClearance: number,
+  score: (point: Point) => number,
 ): ScoredPoint | undefined {
-  const coarse = searchGrid(outer.bbox, COARSE_GRID_STEPS, outer, holes, score);
+  const coarse = searchGrid(outer.bbox, COARSE_GRID_STEPS, outer, holes, requiredClearance, score);
   if (!coarse) {
     return undefined;
   }
@@ -319,6 +320,7 @@ function findBestPoint(
     REFINE_GRID_STEPS,
     outer,
     holes,
+    requiredClearance,
     score,
   );
   return refined && refined.score > coarse.score ? refined : coarse;
@@ -345,38 +347,32 @@ function outerAndHoleRings(path: readonly PathCommand[]): {
 }
 
 /**
- * Up to `count` well-separated points inside a glyph outline. The first is
- * the point of maximum clearance from the outline; each subsequent point
+ * `first` (already a valid interior point, placed by the package) plus up to
+ * `count - 1` more well-separated points inside the same glyph outline: each
  * maximizes distance from every point already chosen, among candidates with
  * at least `minRadius * CLEARANCE_MARGIN` clearance so the hole actually
- * fits. Returns fewer than `count` points (possibly zero) when the glyph
- * can't safely fit that many.
+ * fits. Returns just `[first]` when the glyph can't safely fit a second
+ * point.
  */
-function findHoleCenters(
+function additionalHoleCenters(
   path: readonly PathCommand[],
+  first: Point,
   count: number,
   minRadius: number,
 ): readonly Point[] {
+  const chosen: Point[] = [first];
+
   const rings = outerAndHoleRings(path);
   if (!rings) {
-    return [];
+    return chosen;
   }
   const {outer, holes} = rings;
 
-  const first = findBestPoint(outer, holes, (_point, clearance) => clearance);
-  if (!first) {
-    return [];
-  }
-  const chosen: Point[] = [first.point];
-
   const requiredClearance = minRadius * CLEARANCE_MARGIN;
   while (chosen.length < count) {
-    const next = findBestPoint(outer, holes, (point, clearance) => {
-      if (clearance < requiredClearance) {
-        return undefined;
-      }
-      return Math.min(...chosen.map(c => Math.hypot(point.x - c.x, point.y - c.y)));
-    });
+    const next = findBestPoint(outer, holes, requiredClearance, point =>
+      Math.min(...chosen.map(c => Math.hypot(point.x - c.x, point.y - c.y))),
+    );
     if (!next) {
       break;
     }

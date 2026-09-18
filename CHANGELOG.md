@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Upgraded `@richardmcquiston01/house-number-generator` to v0.1.1, which
+  fixes the same mounting-hole bug `src/lib/holePlacement.ts` was built to
+  work around: it now places each glyph's own hole at the glyph's deepest
+  interior point (instead of its bounding-box center) and fails generation
+  with a clear error if a glyph is too thin for the requested screw size,
+  instead of silently producing an unusable hole. `holePlacement.ts` is
+  simplified accordingly — it now trusts the package's hole as the first of
+  the two and only computes the second, anti-rotation hole itself, rather
+  than recomputing both from scratch.
+
 ### Added
 
 - Optional Google Analytics (GA4) support (`src/lib/analytics.ts`), off by
