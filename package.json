@@ -15,7 +15,7 @@
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
-    "@richardmcquiston01/house-number-generator": "^0.1.0",
+    "@richardmcquiston01/house-number-generator": "^0.1.1",
     "@tarikjabiri/dxf": "^2.9.0",
     "jszip": "^3.10.1",
     "react": "^18.3.1",
