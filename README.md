@@ -45,6 +45,22 @@ npm run format:check # check formatting without writing
 5. Choose the cut file grouping: one file per glyph, or one combined file per number/name group.
 6. Click **Generate Sign** to see an assembled preview and download the cut files (SVG, DXF, and a multi-layer combined SVG are always generated), organized into tabs by piece category, individually or all together as a ZIP.
 
+## Analytics
+
+Google Analytics (GA4) is wired up but off by default. To enable it:
+
+1. Set `VITE_GA_MEASUREMENT_ID` to your GA4 measurement ID (`G-XXXXXXXXXX`)
+   — in Vercel: Project Settings → Environment Variables; locally: copy
+   `.env.example` to `.env.local` and fill it in — then redeploy.
+2. Leaving it unset disables tracking entirely (`src/lib/analytics.ts`
+   no-ops), and it never loads outside a production build, so local dev
+   traffic is never counted.
+
+`src/lib/analytics.ts` has no dependency on this project beyond that one
+env var, so it's portable to any other Vite-based demo: copy the file, add
+the same `VITE_GA_MEASUREMENT_ID` env var to that Vercel project, and call
+`initGoogleAnalytics()` once from its entry point.
+
 ## Buy Me a Coffee
 
 If this app, code, or repository has helped you or someone you know, please consider donating. I appreciate any help to offset the costs of development and/or AI Credits.
