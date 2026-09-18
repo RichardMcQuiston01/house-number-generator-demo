@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Optional Google Analytics (GA4) support (`src/lib/analytics.ts`), off by
+  default and enabled by setting the `VITE_GA_MEASUREMENT_ID` env var.
+  Never loads outside a production build, so local dev traffic isn't
+  counted. Written with no project-specific dependencies so it can be
+  copied as-is into other Vite-based demo sites.
 - **Two mounting holes per glyph** instead of one, so a piece can't spin
   around a single screw once installed. `src/lib/holePlacement.ts` now
   picks the glyph's point of maximum clearance for the first hole and the
