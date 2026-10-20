@@ -1,18 +1,35 @@
 # House Number Generator Demo
 
-## Overview
+A browser-based demo for the
+[`@richardmcquiston01/house-number-generator`](https://www.npmjs.com/package/@richardmcquiston01/house-number-generator)
+NPM package. Configure a house-number sign, preview it assembled, and download
+laser-cutter-ready SVG and DXF cut files — no code required.
 
-TypeScript-based demo Single Page Application (SPA) showcasing the features of the [`@richardmcquiston01/house-number-generator`](https://www.npmjs.com/package/@richardmcquiston01/house-number-generator) NPM package.
+Built with Vite, React 18, TypeScript (strict), and Tailwind CSS. Deployed as a
+static site on [Vercel](https://vercel.com).
 
-The package generates laser-cutter SVG/DXF cut files for a physical house-number sign — one file per digit, per name letter, and for the sign's backer plate — from a config: sign style (numbers only, or name + numbers), shape, dimensions, margin, unit, fonts, and assembly type (hardware with screws, or adhesive). This demo lets you configure a sign in the browser, see an assembled preview, and download the generated cut files, without writing any code.
+## Features
 
-Built with Vite, React, TypeScript, and Tailwind CSS; deployed as a static site on [Vercel](https://vercel.com).
+- **Two sign styles** — numbers only, or a name plus numbers.
+- **Configurable layout** — square, rectangle, or round backer; dimensions,
+  margin, and units (inches or millimeters).
+- **Bundled fonts** — pick from DejaVu and Liberation families; no font upload
+  needed.
+- **Assembly options** — hardware (two screw holes per glyph, so pieces can't
+  spin, sized for common M4/SAE hardware) or adhesive (no holes).
+- **File grouping** — one file per glyph, or one combined file per number/name
+  group. The backer plate is always its own file.
+- **Every format, every time** — SVG and DXF cut files, plus a multi-layer SVG
+  with the backer, numbers, and name on separate Inkscape-compatible layers
+  (black/red/blue) for per-layer laser operations.
+- **Downloads** — preview and download files individually, or all at once as a
+  ZIP.
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 18
+- [Node.js](https://nodejs.org/) 18 or later
 - npm (ships with Node.js)
 
 ### Installation
@@ -21,45 +38,80 @@ Built with Vite, React, TypeScript, and Tailwind CSS; deployed as a static site 
 git clone https://github.com/RichardMcQuiston01/house-number-generator-demo.git
 cd house-number-generator-demo
 npm install
+npm run dev
 ```
 
-### Usage
+Then open <http://localhost:5173>.
 
-```bash
-npm run dev        # start the Vite dev server (http://localhost:5173)
-npm run build       # type-check and build a production bundle to dist/
-npm run preview     # serve the production build locally
-npm run typecheck   # type-check without emitting
-npm run lint         # lint with ESLint
-npm run lint:fix     # lint and auto-fix
-npm run format       # format with Prettier
-npm run format:check # check formatting without writing
+### Scripts
+
+| Command             | Description                                   |
+| ------------------- | --------------------------------------------- |
+| `npm run dev`       | Start the Vite dev server                     |
+| `npm run build`     | Type-check and build to `dist/`               |
+| `npm run preview`   | Serve the production build locally            |
+| `npm run typecheck` | Type-check without emitting                   |
+| `npm run lint`      | Lint with ESLint (`lint:fix` to auto-fix)     |
+| `npm run format`    | Format with Prettier (`format:check` to test) |
+
+## Usage
+
+1. Choose a sign style: **Numbers only** or **Name + numbers**.
+2. Enter the house number (and name, if applicable) and pick fonts.
+3. Set the shape, dimensions, margin, unit, and assembly type.
+4. Choose how cut files are grouped.
+5. Click **Generate Sign** to see the assembled preview and download the files,
+   organized into tabs by piece.
+
+## Project Structure
+
+```text
+src/
+├── components/
+│   ├── configurator/   # Sign configuration form
+│   ├── preview/        # Assembled preview and file gallery
+│   └── layout/         # Header, hero, footer, donate card
+├── lib/                # Generation, hole placement, grouping, analytics
+├── App.tsx
+└── main.tsx
+public/
+├── fonts/              # Bundled fonts + THIRD-PARTY-LICENSES.md
+└── donate.svg
 ```
 
-### Examples
+## Configuration
 
-1. Open the app and choose a sign style: **Numbers only**, or **Name + numbers**.
-2. Enter the house number (and name, if applicable).
-3. Pick a font for the number text (and name text, if applicable) from the bundled font dropdown (see `public/fonts/THIRD-PARTY-LICENSES.md` for attribution).
-4. Choose the sign shape, dimensions, margin, unit, and assembly type (hardware, using one universal screw hole size, or adhesive).
-5. Choose the cut file grouping: one file per glyph, or one combined file per number/name group.
-6. Click **Generate Sign** to see an assembled preview and download the cut files (SVG, DXF, and a multi-layer combined SVG are always generated), organized into tabs by piece category, individually or all together as a ZIP.
+### Google Analytics (optional)
 
-## Analytics
+GA4 is off by default. To enable it, set `VITE_GA_MEASUREMENT_ID` to your
+measurement ID (`G-XXXXXXXXXX`):
 
-Google Analytics (GA4) is wired up but off by default. To enable it:
+- **Vercel:** Project Settings → Environment Variables, then redeploy.
+- **Locally:** copy `.env.example` to `.env.local` and fill it in.
 
-1. Set `VITE_GA_MEASUREMENT_ID` to your GA4 measurement ID (`G-XXXXXXXXXX`)
-   — in Vercel: Project Settings → Environment Variables; locally: copy
-   `.env.example` to `.env.local` and fill it in — then redeploy.
-2. Leaving it unset disables tracking entirely (`src/lib/analytics.ts`
-   no-ops), and it never loads outside a production build, so local dev
-   traffic is never counted.
+When unset, `src/lib/analytics.ts` does nothing. It never loads outside a
+production build, so local traffic is never counted. The module depends only on
+that env var, so it can be copied into any other Vite project and initialized
+with `initGoogleAnalytics()`.
 
-`src/lib/analytics.ts` has no dependency on this project beyond that one
-env var, so it's portable to any other Vite-based demo: copy the file, add
-the same `VITE_GA_MEASUREMENT_ID` env var to that Vercel project, and call
-`initGoogleAnalytics()` once from its entry point.
+## Deployment
+
+The repo includes a `vercel.json` (`npm run build` → `dist/`). Import the
+repository into Vercel and it deploys as a static site with no further setup.
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, and build on every push
+and pull request to `main` and `dev`.
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md).
+
+## License
+
+Licensed under the [Apache License 2.0](./LICENSE). Bundled fonts carry their
+own licenses — see
+[`public/fonts/THIRD-PARTY-LICENSES.md`](./public/fonts/THIRD-PARTY-LICENSES.md).
+
+© 2026 Richard McQuiston. All rights reserved.
 
 ## Buy Me a Coffee
 
@@ -68,11 +120,3 @@ If this app, code, or repository has helped you or someone you know, please cons
 [**Donate via Stripe**](https://donate.stripe.com/00w5kD3Gj1Xo9v7gVOcs800), or scan:
 
 [![Donate via Stripe](./donate.svg)](https://donate.stripe.com/00w5kD3Gj1Xo9v7gVOcs800)
-
-## License
-
-Apache 2
-
-## Copyright
-
-(c)2026 Richard McQuiston.  All rights reserved.

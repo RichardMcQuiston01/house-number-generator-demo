@@ -7,17 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Upgraded `@richardmcquiston01/house-number-generator` to v0.1.1, which
-  fixes the same mounting-hole bug `src/lib/holePlacement.ts` was built to
-  work around: it now places each glyph's own hole at the glyph's deepest
-  interior point (instead of its bounding-box center) and fails generation
-  with a clear error if a glyph is too thin for the requested screw size,
-  instead of silently producing an unusable hole. `holePlacement.ts` is
-  simplified accordingly — it now trusts the package's hole as the first of
-  the two and only computes the second, anti-rotation hole itself, rather
-  than recomputing both from scratch.
+## [0.2.0] - 2026-10-20
 
 ### Added
 
@@ -36,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generators) so it can carry both holes; grouped files and the
   multi-layer SVG already consumed a flat hole list and pick this up for
   free.
-
 - Cut file grouping choice: **Individual** (one SVG/DXF per glyph, the
   original behavior) or **Grouped** (one combined SVG/DXF for all number
   glyphs, and one for all name glyphs) — `src/lib/groupedFiles.ts`. The
@@ -49,31 +38,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   operation per layer/color rather than per file.
 - The file gallery is now tabbed by piece category (House number / Name /
   Backer plate / Multi-layer SVG) instead of one long stacked list.
-
-### Fixed
-
-- **Mounting holes frequently landed outside the glyph they belonged to.**
-  The package centers each hole on the glyph's bounding-box center, which
-  for asymmetric or open shapes (e.g. "4", "0", "1", "7") often falls in
-  empty space or inside a counter rather than on material.
-  `src/lib/holePlacement.ts` recomputes every hole's position as the point
-  of maximum clearance from the glyph's own outline (its "pole of
-  inaccessibility"), correctly excluding counters (the holes of "0", "8",
-  etc.) from consideration, so holes land on solid material whenever the
-  glyph is thick enough to contain them. Applied once, right after layout
-  computation, so every output (individual files, grouped files,
-  multi-layer SVG, and the assembled preview) gets the fix. Backer
-  engraving marks are moved to match.
+- `funding` field in `package.json` pointing at the Stripe donation link,
+  matching the README and floating donate card.
 
 ### Changed
 
+- Upgraded `@richardmcquiston01/house-number-generator` to v0.1.1, which
+  fixes the same mounting-hole bug `src/lib/holePlacement.ts` was built to
+  work around: it now places each glyph's own hole at the glyph's deepest
+  interior point (instead of its bounding-box center) and fails generation
+  with a clear error if a glyph is too thin for the requested screw size,
+  instead of silently producing an unusable hole. `holePlacement.ts` is
+  simplified accordingly — it now trusts the package's hole as the first of
+  the two and only computes the second, anti-rotation hole itself, rather
+  than recomputing both from scratch.
 - The default cut file grouping is now **Grouped** (one combined SVG/DXF
   per number/name group) instead of **Individual**.
 - Hardware assembly now always uses one universal screw hole size (M4's
   hole, ~4.5mm/0.18in, which comfortably fits both common metric and SAE
   small hardware) instead of asking which of eight screw sizes to use —
   the "Screw size" selector was removed.
-
 - Both SVG and DXF cut files are always generated (the "Output format"
   selector was removed) and the multi-layer combined SVG is always
   included (its checkbox was removed) — both were more friction than
@@ -90,6 +74,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dismissible floating card fixed to the bottom-right corner
   (`src/components/layout/DonateCard.tsx`); the dismissal persists via
   `localStorage`.
+- Rewrote the README.
+
+### Fixed
+
+- **Mounting holes frequently landed outside the glyph they belonged to.**
+  The package centers each hole on the glyph's bounding-box center, which
+  for asymmetric or open shapes (e.g. "4", "0", "1", "7") often falls in
+  empty space or inside a counter rather than on material.
+  `src/lib/holePlacement.ts` recomputes every hole's position as the point
+  of maximum clearance from the glyph's own outline (its "pole of
+  inaccessibility"), correctly excluding counters (the holes of "0", "8",
+  etc.) from consideration, so holes land on solid material whenever the
+  glyph is thick enough to contain them. Applied once, right after layout
+  computation, so every output (individual files, grouped files,
+  multi-layer SVG, and the assembled preview) gets the fix. Backer
+  engraving marks are moved to match.
 
 ## [0.1.0] - 2026-09-16
 
