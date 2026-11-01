@@ -119,4 +119,4 @@ If this app, code, or repository has helped you or someone you know, please cons
 
 [**Donate via PayPal**](https://www.paypal.com/ncp/payment/9EDJKBZZEDX6J), or scan:
 
-[![Donate via PayPal](./donate.png)](https://www.paypal.com/ncp/payment/9EDJKBZZEDX6J)
+<a href="https://www.paypal.com/ncp/payment/9EDJKBZZEDX6J"><img src="./donate.png" alt="Donate via PayPal" width="180"></a>
