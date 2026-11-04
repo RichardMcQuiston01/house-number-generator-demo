@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useState} from 'react';
 
 const STORAGE_KEY = 'donate-card-dismissed';
-const DONATE_URL = 'https://www.paypal.com/ncp/payment/9EDJKBZZEDX6J';
+const DONATE_URL = 'https://ko-fi.com/P1V529Z7ZP';
 
 /**
  * Floating "Buy Me a Coffee" card, fixed to the bottom-right corner.
@@ -70,7 +70,7 @@ export function DonateCard(): JSX.Element | null {
       <div className="mx-auto mb-[1.1rem] hidden w-fit rounded-[10px] bg-white p-3.5 [@media(min-width:30rem)_and_(min-height:34rem)]:flex">
         <img
           src="/donate.png"
-          alt="QR code linking to the PayPal donation page"
+          alt="QR code linking to the Ko-fi donation page"
           width={176}
           height={176}
           className="block h-44 w-44"
@@ -81,10 +81,10 @@ export function DonateCard(): JSX.Element | null {
         href={DONATE_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Donate via PayPal, opens in a new tab"
+        aria-label="Support on Ko-fi, opens in a new tab"
         className="block text-center text-[0.95rem] font-semibold text-indigo-400 transition hover:text-indigo-300 hover:underline"
       >
-        Donate via PayPal <span aria-hidden="true">&rarr;</span>
+        Support on Ko-fi <span aria-hidden="true">&rarr;</span>
       </a>
     </aside>
   );
